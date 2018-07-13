@@ -29,9 +29,12 @@ def print_green(name):
         """grenn letter"""
         print("\033[92m {}\033[00m".format(name))
 
+def send_event(event_id):
+    pass    
+
 def get_body_email():
     try:
-        return sys.argv[3]
+        return sys.argv[3].split('@')[-1]
     except IndexError:
         body_email = """
             <html>
@@ -47,7 +50,7 @@ def get_subject_email():
     try:
         return sys.argv[2]
     except IndexError:
-        return 'teste envio de email de alerta zabbix'
+        return 'teste envio de email de alerta zabbix sem parametros'
     
 def get_email_to():
     try: 
@@ -58,11 +61,11 @@ def get_email_to():
 def get_item_history(itemid, stime):
     pass
 
-def make_login():
+def make_login_by_browser():
     browser = RoboBrowser(history=True)
     browser.open(URL_ZABBIX_SERVER)
-    form_login = browser.get_form(action='')
-    form_login['login'] = USER_ZABBIX_EMAIL_ADDRESS
+    form_login = browser.get_form(action='index.php')
+    form_login['name'] = USER_ZABBIX_EMAIL_ADDRESS
     form_login['password'] = USER_ZABBIX_PASSWORD
     browser.submit_form(form_login)
     return browser if browser.response.status_code == 200 else None 
@@ -73,9 +76,10 @@ def get_image():
     browser.open(url)
     return browser.response.content
 
-def get_graph_image(item_id, item_name, period, stime, color):
-    browser = make_login()
+def get_graph_image(item_name, item_id, period, color):
+    browser = make_login_by_browser()
     if browser:
+        stime =  (datetime.now() - timedelta(hours=1)).strftime('%Y%m%d%H%M%S%f')
         url_image = URL_ZABBIX_SERVER + "chart3.php?name={0}&period={1}&width={2}&height={3}&stime={4}&items[0][itemid]={5}&items[0][drawtype]=5&items[0][color]={6}"\
         .format(item_name, 3600, GRAPH_WIDTH, GRAPH_HEIGHT, stime, item_id, GRAPH_COLOR)
         browser.open(url_image)
@@ -85,15 +89,10 @@ def get_graph_image(item_id, item_name, period, stime, color):
 
 
 def mount_email_message():
-    args = [
-        1,
-        'MEMORIA DISPONIVEL', 
-        3600,
-        (datetime.now() - timedelta(hours=1)).strftime('%Y%m%d%H%M%S%f'),
-        '00C800'
-    ]
+    subject = get_subject_email()
+    item_name, event_id, item_id, color, period = tuple(subject.split('@')[:5])
     
-    image = get_image()
+    image = get_graph_image(item_name, item_id, period, color)
 
     if image:
         msg_root = MIMEMultipart('related')
