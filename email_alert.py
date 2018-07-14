@@ -9,12 +9,6 @@ from email.mime.image import MIMEImage
 
 from robobrowser import RoboBrowser
 
-
-SMTP_ADDRESS = 'smtp.gmail.com'
-SMTP_PORT = 587
-SMTP_EMAIL_ADDRESS = ''
-SMTP_EMAIL_PASSWORD = ''
-
 USER_ZABBIX_EMAIL_ADDRESS = ''
 USER_ZABBIX_PASSWORD = ''
 URL_ZABBIX_SERVER = ''
@@ -112,13 +106,15 @@ def mount_email_message():
         return msg_root.as_string() 
     return None
 
-def send_alert_email():
+def connect_smtp_server():
     import smtplib 
+    server = smtplib.SMTP()
+    server.connect('localhost')
+    return server 
+
+def send_alert_email():
+    server = connect_smtp_server()
     email_to = get_email_to()
-    server = smtplib.SMTP(SMTP_ADDRESS, SMTP_PORT)
-    server.ehlo()
-    server.starttls()
-    server.login(SMTP_EMAIL_ADDRESS, SMTP_EMAIL_PASSWORD)
     server.sendmail(EMAIL_FROM_STR, email_to, mount_email_message())
     server.close()
     print_green('OK')
