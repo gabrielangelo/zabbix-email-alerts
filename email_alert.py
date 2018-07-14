@@ -23,6 +23,23 @@ def print_green(name):
         """grenn letter"""
         print("\033[92m {}\033[00m".format(name))
 
+def make_api_auth():
+	"""
+		Must return the user token
+	"""
+	json = {
+    		"jsonrpc": "2.0",
+    		"method": "user.login",
+    		"params": {
+        		"user": "{0}".format(USER_ZABBIX_EMAIL_ADDRESS),
+        		"password": "{0}".format(USER_ZABBIX_PASSWORD) 
+    		},
+    		"id": 1,
+    		"auth": None
+	}
+	response = requests.post(URL_ZABBIX_API, json=json)
+	return response.json['result'] if response.status_code == 200 else None 
+
 def send_event(event_id):
     pass    
 
