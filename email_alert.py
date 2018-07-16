@@ -9,10 +9,10 @@ from email.mime.image import MIMEImage
 
 from robobrowser import RoboBrowser
 
-USER_ZABBIX_EMAIL_ADDRESS = ''
+USER_ZABBIX_EMAIL_ADDRESS = ''  
 USER_ZABBIX_PASSWORD = ''
 URL_ZABBIX_SERVER = ''
-URL_ZABBIX_API = ''
+URL_ZABBIX_API = URL_ZABBIX_SERVER + 'api_jsonrpc.php'
 
 EMAIL_FROM_STR = ''
 GRAPH_WIDTH = 900
@@ -22,6 +22,9 @@ GRAPH_COLOR = '00C800'
 def print_green(name):
         """grenn letter"""
         print("\033[92m {}\033[00m".format(name))
+
+def get_type_by_item_id():
+    pass
 
 def make_api_auth():
 	"""
@@ -38,10 +41,21 @@ def make_api_auth():
     		"auth": None
 	}
 	response = requests.post(URL_ZABBIX_API, json=json)
-	return response.json['result'] if response.status_code == 200 else None 
+	return response.json()['result'] if response.status_code == 200 else None 
 
-def send_event(event_id):
-    pass    
+def send_event_alert(auth, event_id):
+    json = {
+		'jsonrpc':'2.0',    
+		'method':'event.acknowledge',
+		'params': {
+			'eventids': event_id,
+			'message': "Email enviado com sucesso para {0}".format(sys.argv[1])
+		},
+		'auth':auth,
+		'id':3
+	}
+    response = requests.post(URL_ZABBIX_API, json=json)    
+    return response.json()['result'] if response.status_code == 200 else None 
 
 def get_body_email():
     try:
@@ -69,9 +83,6 @@ def get_email_to():
     except IndexError: 
         raise 'o email de destino deve ser setado'
 
-def get_item_history(itemid, stime):
-    pass
-
 def make_login_by_browser():
     browser = RoboBrowser(history=True)
     browser.open(URL_ZABBIX_SERVER)
@@ -87,10 +98,9 @@ def get_image():
     browser.open(url)
     return browser.response.content
 
-def get_graph_image(item_name, item_id, period, color):
+def get_graph_image(item_name, item_id, period, color, stime):
     browser = make_login_by_browser()
     if browser:
-        stime =  (datetime.now() - timedelta(hours=1)).strftime('%Y%m%d%H%M%S%f')
         url_image = URL_ZABBIX_SERVER + "chart3.php?name={0}&period={1}&width={2}&height={3}&stime={4}&items[0][itemid]={5}&items[0][drawtype]=5&items[0][color]={6}"\
         .format(item_name, 3600, GRAPH_WIDTH, GRAPH_HEIGHT, stime, item_id, GRAPH_COLOR)
         browser.open(url_image)
@@ -98,12 +108,32 @@ def get_graph_image(item_name, item_id, period, color):
         return image_data
     return None
 
+def get_history(time, item_id):
+    auth = make_api_auth()
+    json = {
+        "jsonrpc": "2.0",
+        "method": "history.get",
+        "params": {
+            "output": "extend",
+            "history": 1,
+            "itemids": str(item_id),
+            "sortfield": "clock",
+            "sortorder": "DESC",
+            "limit": 10,
+            "time_till":time
+        },
+        "auth": auth,
+        "id": 1
+    }
+    response = requests.get(URL_ZABBIX_API, json=json)
+    return response.json()['result'] if response.status_code == 200 else None
 
 def mount_email_message():
     subject = get_subject_email()
-    item_name, event_id, item_id, color, period = tuple(subject.split('@')[:5])
-    
-    image = get_graph_image(item_name, item_id, period, color)
+    item_name, _, item_id, color, period = tuple(subject.split('@')[:5])
+    stime =  (datetime.now() - timedelta(hours=1)).strftime('%Y%m%d%H%M%S%f')
+    history = get_history(stime, item_id)
+    image = get_graph_image(item_name, item_id, period, color, stime)
 
     if image:
         msg_root = MIMEMultipart('related')
@@ -114,7 +144,7 @@ def mount_email_message():
 
         msg_alternative = MIMEMultipart('alternative')
         msg_root.attach(msg_alternative)
-        body_email = MIMEText(get_body_email(), 'html')
+        body_email = MIMEText(get_body_email().format(value_history=history[-1]['value']), 'html')
         msg_alternative.attach(body_email) 
         
         msg_image = MIMEImage(image)
@@ -137,4 +167,9 @@ def send_alert_email():
     print_green('OK')
 
 if __name__ == '__main__':
-    send_alert_email()
+    #send_alert_email()
+    #print(tuple(get_body_email().format(value_history=history[-1]['value'])
+    #_, event_id, *_ = tuple(get_subject_email().split('@')[:5])
+    #send_event_alert(make_api_auth(), event_id)
+    print('oi')
+    print(sys.argv[3])
