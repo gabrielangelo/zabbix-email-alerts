@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*- 
+
 import os 
 import sys
 import textwrap
@@ -67,4 +69,4 @@ sobre essa notificação, por favor, responda este e-mail.</b></td>
 '''
 body = ''.join(textwrap.wrap(BODY_EMAIL))
 #print(body)
-os.system('python email_alert.py gabri005@gmail.com assunto {0}'.format(body))
+os.system("python email_alert.py gabri005@gmail.com assunto '{0}'".format(body))
