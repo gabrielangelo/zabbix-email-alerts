@@ -83,13 +83,23 @@ def get_email_to():
         return sys.argv[1]
     except IndexError: 
         raise 'o email de destino deve ser setado'
-
-def make_login_by_browser():
+    
+def make_login_by_browser(): 
+    from robobrowser.forms.fields import BaseField
+    
     browser = RoboBrowser(history=True)
     browser.open(URL_ZABBIX_SERVER)
     form_login = browser.get_form(action='index.php')
+    #get the necessary field with id='enter' and add to form fields to be abble submit form 
+    button_field_required_to_submit = browser.find(id='enter')
+    attrs_button = button_field_required_to_submit.attrs 
+    form_login.add_field(BaseField(button_field_required_to_submit))
+    
+    form_login[attrs_button['id']] = attrs_button['value']
+    
     form_login['name'] = USER_ZABBIX_EMAIL_ADDRESS
     form_login['password'] = USER_ZABBIX_PASSWORD
+    
     browser.submit_form(form_login)
     return browser if browser.response.status_code == 200 else None 
 
