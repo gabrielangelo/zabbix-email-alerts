@@ -1,7 +1,8 @@
 import sys
 import requests
 from datetime import (
-    datetime, timedelta
+    datetime, 
+    timedelta
 )
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -92,7 +93,7 @@ def make_login_by_browser():
     browser.submit_form(form_login)
     return browser if browser.response.status_code == 200 else None 
 
-def get_image():
+def get_image_test():
     url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Star_Wars_Logo.svg/2000px-Star_Wars_Logo.svg.png'
     browser = RoboBrowser(history=True)
     browser.open(url)
@@ -159,17 +160,10 @@ def connect_smtp_server():
     server.connect('localhost')
     return server 
 
-def send_alert_email():
+if __name__ == '__main__':
     server = connect_smtp_server()
-    email_to = get_email_to()
-    server.sendmail(EMAIL_FROM_STR, email_to, mount_email_message())
+    message = mount_email_message()
+    email_to = get_email_to()    
+    server.sendmail(EMAIL_FROM_STR, email_to, mount_email_message)
     server.close()
     print_green('OK')
-
-if __name__ == '__main__':
-    #send_alert_email()
-    #print(tuple(get_body_email().format(value_history=history[-1]['value'])
-    #_, event_id, *_ = tuple(get_subject_email().split('@')[:5])
-    #send_event_alert(make_api_auth(), event_id)
-    print('oi')
-    print(sys.argv[3])
