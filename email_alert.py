@@ -44,6 +44,17 @@ def make_api_auth():
 	response = requests.post(URL_ZABBIX_API, json=json)
 	return response.json()['result'] if response.status_code == 200 else None 
 
+def make_logout_api():
+	json = json = {
+                "jsonrpc": "2.0",
+                "method": "user.logout",
+                "id": 1,
+		"params":{}
+                "auth": None
+        }
+	response = requests.post(URL_ZABBIX_API, json=json)
+	return response.json()['result'] if response.status_code == 200 else None
+
 def send_event_alert(auth, event_id):
     json = {
 		'jsonrpc':'2.0',    
