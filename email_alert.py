@@ -1,24 +1,18 @@
 import sys
-import requests
-from datetime import (
-    datetime, 
-    timedelta
-)
+
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 
+from datetime import (
+    datetime, 
+    timedelta
+)
+
+import requests
+
 from robobrowser import RoboBrowser
-
-USER_ZABBIX_EMAIL_ADDRESS = ''  
-USER_ZABBIX_PASSWORD = ''
-URL_ZABBIX_SERVER = ''
-URL_ZABBIX_API = URL_ZABBIX_SERVER + 'api_jsonrpc.php'
-
-EMAIL_FROM_STR = ''
-GRAPH_WIDTH = 900
-GRAPH_HEIGHT = 200
-GRAPH_COLOR = '00C800'
+from config import *
 
 def print_green(name):
         """grenn letter"""
@@ -94,7 +88,10 @@ def get_email_to():
         return sys.argv[1]
     except IndexError: 
         raise 'o email de destino deve ser setado'
-    
+
+def get_params():
+    return tuple(sys.argv[3].split('@')[:5])
+
 def make_login_by_browser(): 
     from robobrowser.forms.fields import BaseField
     
@@ -148,15 +145,15 @@ def get_history(time, item_id):
         "id": 1
     }
     response = requests.get(URL_ZABBIX_API, json=json)
+    print(response.json())
     return response.json()['result'] if response.status_code == 200 else None
 
 def mount_email_message():
     subject = get_subject_email()
-    item_name, _, item_id, color, period = tuple(subject.split('@')[:5])
+    item_name, _, item_id, color, period = get_params()
     stime =  (datetime.now() - timedelta(hours=1)).strftime('%Y%m%d%H%M%S%f')
     history = get_history(stime, item_id)
     image = get_graph_image(item_name, item_id, period, color, stime)
-
     if image:
         msg_root = MIMEMultipart('related')
         msg_root['Subject'] = get_subject_email()
@@ -166,7 +163,9 @@ def mount_email_message():
 
         msg_alternative = MIMEMultipart('alternative')
         msg_root.attach(msg_alternative)
-        body_email = MIMEText(get_body_email().format(value_history=history[-1]['value']), 'html')
+        value_history = ""
+        body_email = get_body_email()
+        body_email = MIMEText(body_email, 'html')#.format(value_history=history[-1]['value']), 'html')
         msg_alternative.attach(body_email) 
         
         msg_image = MIMEImage(image)
@@ -183,8 +182,7 @@ def connect_smtp_server():
 
 if __name__ == '__main__':
     server = connect_smtp_server()
-    message = mount_email_message()
-    email_to = get_email_to()    
-    server.sendmail(EMAIL_FROM_STR, email_to, mount_email_message)
+    email_to = get_email_to()
+    server.sendmail(EMAIL_FROM_STR, email_to, mount_email_message())
     server.close()
-    print_green('OK')
+ 
