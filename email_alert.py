@@ -121,7 +121,7 @@ def get_graph_image(item_name, item_id, period, color, stime):
     browser = make_login_by_browser()
     if browser:
         url_image = URL_ZABBIX_SERVER + "chart3.php?name={0}&period={1}&width={2}&height={3}&stime={4}&items[0][itemid]={5}&items[0][drawtype]=5&items[0][color]={6}"\
-        .format(item_name, 3600, GRAPH_WIDTH, GRAPH_HEIGHT, stime, item_id, GRAPH_COLOR)
+        .format(item_name, 3600, GRAPH_WIDTH, GRAPH_HEIGHT, stime, item_id, color)
         browser.open(url_image)
         image_data = browser.response.content 
         return image_data
